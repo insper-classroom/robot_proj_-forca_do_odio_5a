@@ -1,15 +1,14 @@
 # Base para Projeto 1 - Robótica 
 
-Nome do grupo: 
+Nome do grupo: Força do ódio
 
 ____________
 
 Nome dos integrantes: 
 
-* pessoa 1
-* pessoa 2
-* pessoa 3
-* pessoa 4
+* Bruno Saboya
+* Esther Dagir
+* João Vitor Magalhães
 
 
 Visite sempre o enunciado abaixo para atualizacões: 
