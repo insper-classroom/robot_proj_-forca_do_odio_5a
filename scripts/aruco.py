@@ -28,8 +28,6 @@ parameters.adaptiveThreshWinSizeMax = 1000
 #-- Font for the text in the image
 font = cv2.FONT_HERSHEY_PLAIN
 
-bridge = CvBridge() #converte a msg do ROS para OpenCV
-
 # A função a seguir é chamada sempre que chega um novo frame
 def identifica_aruco(imagem):
 	#print("frame")
@@ -100,15 +98,3 @@ def identifica_aruco(imagem):
 			cv_image = cv2.drawContours(cv_image, [imgpts[:4]],-1,(0,0,255),4)
 			for i,j in zip(range(4),range(4,8)): cv_image = cv2.line(cv_image, tuple(imgpts[i]), tuple(imgpts[j]),(0,0,255),4);
 			cv_image = cv2.drawContours(cv_image, [imgpts[4:]],-1,(0,0,255),4)
-			
-
-		# Exibe tela
-		cv2.imshow("Camera", cv_image)
-		cv2.waitKey(1)
-	except CvBridgeError as e:
-		print('ex', e)
-	
-if __name__=="__main__":
-	rospy.init_node("aruco")
-
-	topico_imagem = "/camera/image/compressed" #robo simulado
