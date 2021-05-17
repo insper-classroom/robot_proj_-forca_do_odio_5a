@@ -14,14 +14,6 @@ from cv_bridge import CvBridge, CvBridgeError
 import cv2.aruco as aruco
 import sys
 
-#--- Define Tag de teste
-id_to_find  = 200
-marker_size  = 20 #- [cm]
-#id_to_find  = 22
-#marker_size  = 3 #- [cm]
-# 
-
-
 #--- Get the camera calibration path
 calib_path  = "/home/borg/catkin_ws/src/robot202/ros/exemplos202/scripts/"
 camera_matrix   = np.loadtxt(calib_path+'cameraMatrix_raspi.txt', delimiter=',')
@@ -37,26 +29,11 @@ parameters.adaptiveThreshWinSizeMax = 1000
 font = cv2.FONT_HERSHEY_PLAIN
 
 bridge = CvBridge() #converte a msg do ROS para OpenCV
-cv_image = None
-scan_dist = 0
-
-def scaneou(dado):
-	#print("scan")
-	global scan_dist 
-	scan_dist = dado.ranges[0]*100
-	return scan_dist
-
 
 # A função a seguir é chamada sempre que chega um novo frame
-def roda_todo_frame(imagem):
+def identifica_aruco(imagem):
 	#print("frame")
 	
-	try:
-		cv_image = bridge.compressed_imgmsg_to_cv2(imagem, "bgr8") # imagem compressed
-		#cv_image = cv2.flip(cv_image, -1) # Descomente se for robo real
-		#cv_image = bridge.imgmsg_to_cv2(imagem, "bgr8") 			# imagem não compressed
-		#cv_image = cv2.resize(cv_image,(cv_image.shape[1]*2,cv_image.shape[0]*2)) # resize image se necessario
-		
 		gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
 		corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
 		print(ids)
@@ -80,9 +57,9 @@ def roda_todo_frame(imagem):
 
 			##############----- Referencia dos Eixos------###########################
 			# Linha referencia em X
-			cv2.line(cv_image, (cv_image.shape[1]/2,cv_image.shape[0]/2), ((cv_image.shape[1]/2 + 50),(cv_image.shape[0]/2)), (0,0,255), 5) 
+			#cv2.line(cv_image, (cv_image.shape[1]/2,cv_image.shape[0]/2), ((cv_image.shape[1]/2 + 50),(cv_image.shape[0]/2)), (0,0,255), 5) 
 			# Linha referencia em Y
-			cv2.line(cv_image, (cv_image.shape[1]/2,cv_image.shape[0]/2), (cv_image.shape[1]/2,(cv_image.shape[0]/2 + 50)), (0,255,0), 5) 	
+			#cv2.line(cv_image, (cv_image.shape[1]/2,cv_image.shape[0]/2), (cv_image.shape[1]/2,(cv_image.shape[0]/2 + 50)), (0,255,0), 5) 	
 			
 			#####################---- Distancia Euclidiana ----#####################
 			# Calcula a distancia usando apenas a matriz tvec, matriz de tanslação
@@ -135,23 +112,3 @@ if __name__=="__main__":
 	rospy.init_node("aruco")
 
 	topico_imagem = "/camera/image/compressed" #robo simulado
-	#topico_imagem = "/raspicam/image_raw/compressed" #robo real
-	recebe_imagem = rospy.Subscriber(topico_imagem, CompressedImage, roda_todo_frame, queue_size=4, buff_size = 2**24)
-
-	# Teste com imagem não compressed
-	#topico_imagem = "/camera/image"
-	#recebe_imagem = rospy.Subscriber(topico_imagem, Image, roda_todo_frame, queue_size=4, buff_size = 2**24)
-	
-	print("Usando ", topico_imagem)
-
-	# validação da distância usando laser scan
-	#recebe_scan = rospy.Subscriber("/scan", LaserScan, scaneou)
-	
-	
-	try:
-
-		while not rospy.is_shutdown():
-			rospy.sleep(0.1)
-
-	except rospy.ROSInterruptException:
-	    print("Ocorreu uma exceção com o rospy")
