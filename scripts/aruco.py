@@ -15,7 +15,7 @@ import cv2.aruco as aruco
 import sys
 
 #--- Get the camera calibration path
-calib_path  = "/home/borg/catkin_ws/src/robot202/ros/exemplos202/scripts/"
+calib_path  = "/home/borg/catkin_ws/src/robot21.1/ros/exemplos211/scripts/"
 camera_matrix   = np.loadtxt(calib_path+'cameraMatrix_raspi.txt', delimiter=',')
 camera_distortion   = np.loadtxt(calib_path+'cameraDistortion_raspi.txt', delimiter=',')
 
@@ -32,20 +32,24 @@ font = cv2.FONT_HERSHEY_PLAIN
 def identifica_aruco(imagem):
 	#print("frame")
 	
-		gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+		gray = cv2.cvtColor(imagem, cv2.COLOR_BGR2GRAY)
 		corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
-		print(ids)
 
+		if ids is not None:
+			return ids
+		else:
+			return []
 
+'''
 		if ids is not None:
 			#-- ret = [rvec, tvec, ?]
 			#-- rvec = [[rvec_1], [rvec_2], ...] vetor de rotação
 			#-- tvec = [[tvec_1], [tvec_2], ...] vetor de translação
-			ret = aruco.estimatePoseSingleMarkers(corners, marker_size, camera_matrix, camera_distortion)
-			rvec, tvec = ret[0][0,0,:], ret[1][0,0,:]
+			#ret = aruco.estimatePoseSingleMarkers(corners, marker_size, camera_matrix, camera_distortion)
+			#rvec, tvec = ret[0][0,0,:], ret[1][0,0,:]
 
 			#-- Desenha um retanculo e exibe Id do marker encontrado
-			aruco.drawDetectedMarkers(cv_image, corners, ids) 
+			aruco.drawDetectedMarkers(imagem, corners, ids) 
 			aruco.drawAxis(cv_image, camera_matrix, camera_distortion, rvec, tvec, 1)
 
 			#-- Print tvec vetor de tanslação em x y z
@@ -68,7 +72,7 @@ def identifica_aruco(imagem):
 			#-- Print distance
 			str_dist = "Dist aruco=%4.0f  dis.np=%4.0f"%(distance, distancenp)
 			print(str_dist)
-			cv2.putText(cv_image, str_dist, (0, 15), font, 1, (0, 255, 0), 1, cv2.LINE_AA)
+			cv2.putText(imagem, str_dist, (0, 15), font, 1, (0, 255, 0), 1, cv2.LINE_AA)
 
 			#####################---- Distancia pelo foco ----#####################
 			#https://www.pyimagesearch.com/2015/01/19/find-distance-camera-objectmarker-using-python-opencv/
@@ -86,7 +90,7 @@ def identifica_aruco(imagem):
 			#-- Print distancia focal
 			str_distfocal = "Dist focal=%4.0f"%(dist)
 			print(str_distfocal)
-			cv2.putText(cv_image, str_distfocal, (0, 30), font, 1, (0, 255, 0), 1, cv2.LINE_AA)	
+			cv2.putText(imagem, str_distfocal, (0, 30), font, 1, (0, 255, 0), 1, cv2.LINE_AA)	
 
 
 			####################--------- desenha o cubo -----------#########################
@@ -95,6 +99,7 @@ def identifica_aruco(imagem):
 			pts = np.float32([[-m,m,m], [-m,-m,m], [m,-m,m], [m,m,m],[-m,m,0], [-m,-m,0], [m,-m,0], [m,m,0]])
 			imgpts, _ = cv2.projectPoints(pts, rvec, tvec, camera_matrix, camera_distortion)
 			imgpts = np.int32(imgpts).reshape(-1,2)
-			cv_image = cv2.drawContours(cv_image, [imgpts[:4]],-1,(0,0,255),4)
-			for i,j in zip(range(4),range(4,8)): cv_image = cv2.line(cv_image, tuple(imgpts[i]), tuple(imgpts[j]),(0,0,255),4);
-			cv_image = cv2.drawContours(cv_image, [imgpts[4:]],-1,(0,0,255),4)
+			imagem = cv2.drawContours(imagem, [imgpts[:4]],-1,(0,0,255),4)
+			for i,j in zip(range(4),range(4,8)): cv_image = cv2.line(imagem, tuple(imgpts[i]), tuple(imgpts[j]),(0,0,255),4);
+			imagem = cv2.drawContours(imagem, [imgpts[4:]],-1,(0,0,255),4)
+'''
