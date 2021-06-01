@@ -21,6 +21,7 @@ from scipy.spatial.transform import Rotation as R
 
 import math
 import Q3_utils as q3utils
+import cores
 
 
 
@@ -79,7 +80,10 @@ high = q3utils.high
 centro_caixa = (320, 240)
 area_caixa = 0
 
-## 
+cv_image = None
+media = []
+centro = []
+maior_area = 0
 
 # A função a seguir é chamada sempre que chega um novo frame
 def roda_todo_frame(imagem):
@@ -88,14 +92,22 @@ def roda_todo_frame(imagem):
     global angle_yellow
     global centro_caixa
     global area_caixa
+    global cv_image
+    global media
+    global centro
+    global maior_area
+    
+    cor_creeper = "verde"
 
     try:
         cv_image = bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
         cv2.imshow("Camera", cv_image)
         ##
         copia = cv_image.copy() # se precisar usar no while
+        creeper_img = cv_image.copy()
 
         if frame%skip==0: # contamos a cada skip frame
+
             for j in range(copia.shape[0]):
                 for i in range(int(copia.shape[1]/3)):
                     copia[j][i] = 0
@@ -111,25 +123,23 @@ def roda_todo_frame(imagem):
             ang_deg = math.degrees(ang)
 
             angle_yellow = ang_deg
-
-            cv2.imshow("centro", img)
-            cv2.imshow("angulo", saida_bgr)
-
-
-            ## Achando o maior objeto azul 
-            media, centro_frame, area = q3utils.identifica_cor(copia)
             
-            area_caixa = area
-            centro_caixa = media
+            if cor_creeper == "laranja":
+                media, centro, maior_area = cores.identifica_cor_laranja(creeper_img)
 
+            elif cor_creeper == "verde":
+                media, centro, maior_area = cores.identifica_cor_verde(creeper_img)
+            
+            elif cor_creeper == "ciano":
+                media, centro, maior_area = cores.identifica_cor_ciano(creeper_img)
+            
+            #cv2.imshow("centro", img)
+            #cv2.imshow("angulo", saida_bgr)
+            cv2.imshow("creeper", creeper_img)
 
         cv2.waitKey(1)
     except CvBridgeError as e:
         print('ex', e)
- 
-
-
-
 
 if __name__=="__main__":
 
@@ -144,7 +154,7 @@ if __name__=="__main__":
     recebedor = rospy.Subscriber(topico_imagem, CompressedImage, roda_todo_frame, queue_size=4, buff_size = 2**24)
 
     zero = Twist(Vector3(0,0,0), Vector3(0,0,0))
-    gira180 = Twist(Vector3(0,0,0), Vector3(0,0,180*math.pi/180))
+    girar180 = Twist(Vector3(0,0,0), Vector3(0,0,180*math.pi/180))
 
 
     x = 0
@@ -167,6 +177,7 @@ if __name__=="__main__":
     AVANCA_PROXIMO = 3
     TERMINOU = 4
     GIRAR = 5
+    AVANCA_CREEPER = 6 
 
     state = INICIAL
 
@@ -193,23 +204,35 @@ if __name__=="__main__":
        pass
 
     def gira180():
-       cmd_vel.publish(gira180)
+       cmd_vel.publish(girar180)
        rospy.sleep(1)
             
     def terminou():
         zero = Twist(Vector3(0,0,0), Vector3(0,0,0))         
         cmd_vel.publish(zero)
 
+    def avanca_creeper():
+        if len(media) != 0 and len(centro) != 0:
+            if (media[0] >= centro[0]):
+                    vel = Twist(Vector3(0.2,0,0), Vector3(0,0,-0.2))
+            if (media[0] < centro[0]):
+                    vel = Twist(Vector3(0.2,0,0), Vector3(0,0,0.2))
+            velocidade_saida.publish(vel)
+            rospy.sleep(0.1)
+
     def dispatch():
         "Logica de determinar o proximo estado"
         global state
 
-        if distancia < 0.5:
+        if 500 <= maior_area <= 3000:
+            state = AVANCA_CREEPER
+
+        elif distancia < 0.5:
             state = GIRAR
 
-        if c_img[x] - tol_centro < centro_yellow[x] < c_img[x] + tol_centro:
+        elif c_img[x] - tol_centro < centro_yellow[x] < c_img[x] + tol_centro:
             state = AVANCA
-            if   - tol_ang< angle_yellow  < tol_ang:  # para angulos centrados na vertical, regressao de x = f(y) como está feito
+            if   - tol_ang< angle_yellow  < tol_ang and state:  # para angulos centrados na vertical, regressao de x = f(y) como está feito
                 state = AVANCA_RAPIDO
         else: 
                 state = ALINHA
@@ -217,7 +240,7 @@ if __name__=="__main__":
         print("centro_yellow {} area caixa {:.2f} angle_yellow {:.3f} state: {}".format(centro_yellow, area_caixa, angle_yellow, state))
         
 
-    acoes = {INICIAL:inicial, AVANCA: avanca, AVANCA_RAPIDO: avanca_rapido, ALINHA: alinha, AVANCA_PROXIMO: avanca_proximo, GIRAR:gira180, TERMINOU: terminou}
+    acoes = {INICIAL:inicial, AVANCA: avanca, AVANCA_RAPIDO: avanca_rapido, ALINHA: alinha, AVANCA_PROXIMO: avanca_proximo, TERMINOU: terminou, GIRAR: gira180, AVANCA_CREEPER: avanca_creeper}
 
 
     r = rospy.Rate(200) 
